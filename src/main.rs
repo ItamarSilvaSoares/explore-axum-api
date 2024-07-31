@@ -19,6 +19,15 @@ struct Page {
     number: u32,
 }
 
+#[derive(Deserialize)]
+struct Item {
+    title: String
+}
+
+async fn add_item(Json(item): Json<Item>) -> String {
+    format!("Item adicionado: {}", item.title)
+}
+
 async fn show_item(Path(id): Path<u32>, Query(page): Query<Page>) -> String {
     format!("Item {} na pagina {}", id, page.number)
 }
@@ -50,6 +59,7 @@ async fn list_users() -> Json<Vec<User>> {
 async fn main() {
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
+        .route("/add-item", post(add_item))
         .route("/item/:id", get(show_item))
         .route("/create-user", post(create_user))
         .route("/users", get(list_users))
