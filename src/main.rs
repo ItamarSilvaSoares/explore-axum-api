@@ -3,7 +3,7 @@ use axum::{
     extract::{Path, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, delete},
     Router, Json,
 };
 use serde::{Serialize, Deserialize};
@@ -12,7 +12,6 @@ use serde::{Serialize, Deserialize};
 struct User {
     id: u64,
     name: String,
-    email: String,
 }
 #[derive(Deserialize)]
 struct Page {
@@ -23,6 +22,28 @@ struct Page {
 struct Item {
     title: String
 }
+
+async fn delete_user(Path(user_id): Path<u64>) -> Result<Json<User>, impl IntoResponse> {
+    match perform_delete_user(user_id).await {
+        Ok(_) => Ok(Json(User {
+            id: user_id,
+            name: "Deleted User".into(),
+        })),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to delete user: {}", e),
+        )),
+    }
+}
+
+async fn perform_delete_user(user_id: u64) -> Result<(), String> {
+    if user_id == 1 {
+        Err("Usuário não pode ser deletado.".to_string())
+    } else {
+        Ok(())
+    }
+}
+
 
 async fn add_item(Json(item): Json<Item>) -> String {
     format!("Item adicionado: {}", item.title)
@@ -44,12 +65,10 @@ async fn list_users() -> Json<Vec<User>> {
         User {
             id: 1,
             name: "Elijah".to_string(),
-            email: "elijah@example.com".to_string(),
         },
         User {
             id: 2,
             name: "John".to_string(),
-            email: "john@doe.com".to_string(),
         },
     ];
     Json(users)
@@ -59,6 +78,7 @@ async fn list_users() -> Json<Vec<User>> {
 async fn main() {
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
+        .route("/delete-user/:user_id", delete(delete_user))
         .route("/add-item", post(add_item))
         .route("/item/:id", get(show_item))
         .route("/create-user", post(create_user))
