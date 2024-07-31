@@ -1,17 +1,26 @@
 use axum::{
     body::Body,
+    extract::{Path, Query},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
     Router, Json,
 };
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 #[derive(Serialize)]
 struct User {
     id: u64,
     name: String,
     email: String,
+}
+#[derive(Deserialize)]
+struct Page {
+    number: u32,
+}
+
+async fn show_item(Path(id): Path<u32>, Query(page): Query<Page>) -> String {
+    format!("Item {} na pagina {}", id, page.number)
 }
 
 async fn create_user() -> impl IntoResponse {
@@ -41,6 +50,7 @@ async fn list_users() -> Json<Vec<User>> {
 async fn main() {
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
+        .route("/item/:id", get(show_item))
         .route("/create-user", post(create_user))
         .route("/users", get(list_users))
         ;
